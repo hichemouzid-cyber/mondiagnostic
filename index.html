@@ -334,7 +334,7 @@ body.docked #drClose{display:none}
 .kindchips span{display:inline-flex;align-items:center;gap:4px;background:#eef3f8;border:1px solid #d3dee8;border-radius:16px;padding:3px 4px 3px 10px;font-weight:800}
 .kindchips span button{border:0;background:#fff;border-radius:50%;width:22px;height:22px;padding:0;color:#a83231;font-weight:900}
 .pinprev{display:inline-flex;gap:8px;align-items:center;padding:10px;background:#f1f5f8;border-radius:10px}
-.pinprev .pin{position:relative;transform:none}
+.pinprev .pin{position:static;transform:none}
 .logoprev{max-height:60px;max-width:180px;border:1px solid #dde5ec;border-radius:8px;padding:4px;background:#fff}
 .stat-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
 @media(max-width:900px){.stat-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -553,15 +553,6 @@ body.scr-diag .toast{bottom:76px}
 
 .rpin:not(.inl)::before{bottom:-1.3mm;width:2.6mm;height:2.6mm;margin-left:-1.3mm;border-width:0 .42mm .42mm 0;border-style:solid;border-color:#fff}
 
-/* partage Google Drive */
-.syncstate{background:none;border:0;cursor:pointer;margin-left:10px;padding:0;font:inherit;font-size:11px;color:#9fe0c8;display:inline-flex;align-items:center;gap:4px}
-.syncstate .ic{font-size:14px}
-.syncstate.syncing{color:#ffe08a}.syncstate.offline,.syncstate.auth{color:#ffe08a}.syncstate.error{color:#ffb4ae}
-.syncstate[hidden]{display:none}
-.shlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
-.shlist li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line,#d8dee6);border-radius:10px}
-@media(max-width:699px){.syncstate .t{display:none}.syncstate{margin-left:6px}}
-
 </style>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script></head>
 <body class="scr-diag">
@@ -576,7 +567,6 @@ body.scr-diag .toast{bottom:76px}
     <button type="button" data-screen="help"><i>?</i><span>Aide</span></button>
   </nav>
   <img class="company-logo" id="brandLogo" alt="Roux ingénierie">
-  <button type="button" class="savestate syncstate off" id="syncState" hidden></button>
   <div class="savestate" id="saveState" title="Sauvegarde locale automatique dans ce navigateur">● Enregistré</div>
 </header>
 <div class="workspace">
@@ -629,7 +619,7 @@ body.scr-diag .toast{bottom:76px}
 <!-- =================== PRÉPARATION =================== -->
 <section class="screen" id="screen-prep" aria-label="Mode préparation"><div class="page">
   <div class="pagehead"><div><div class="kicker">Préparation du dossier</div><h1>Préparer le diagnostic</h1><p class="small">Projet, plans et élévations, calage et nomenclature. Sur le chantier, passez en mode Diagnostic.</p></div><button type="button" class="btn pri" data-goto="diag">Passer au diagnostic →</button></div>
-  <div class="seg subtabs" id="prepTabs" role="tablist"><button type="button" data-ptab="projet">1 · Projet</button><button type="button" data-ptab="docs">2 · Plans &amp; façades</button><button type="button" data-ptab="cal">3 · Calage</button><button type="button" data-ptab="nom">4 · Pastilles</button><button type="button" data-ptab="stock">5 · Stockage</button><button type="button" data-ptab="share">6 · Partage</button></div>
+  <div class="seg subtabs" id="prepTabs" role="tablist"><button type="button" data-ptab="projet">1 · Projet</button><button type="button" data-ptab="docs">2 · Plans &amp; façades</button><button type="button" data-ptab="cal">3 · Calage</button><button type="button" data-ptab="nom">4 · Pastilles</button><button type="button" data-ptab="stock">5 · Stockage</button></div>
 
   <div class="ptab" id="prep-projet">
     <div class="cardgrid">
@@ -720,8 +710,6 @@ body.scr-diag .toast{bottom:76px}
       <p class="tiny">La gravité est fixée par le diagnostiqueur pour chaque désordre ; la pastille prend la couleur de la gravité la plus élevée.</p>
     </div>
   </div>
-
-  <div class="ptab" id="prep-share"><div id="shareBody"></div></div>
 
   <div class="ptab" id="prep-stock">
     <div class="cardgrid">
@@ -1296,9 +1284,7 @@ function persist() {
   try {
     const data = Object.assign({}, st, { docs: undefined, savedAt: new Date().toISOString() });
     localStorage.setItem(LS_KEY, JSON.stringify(data));
-    dirty = false; setSaveState('ok');
-    try { if (typeof trackChanges === 'function') trackChanges(); } catch (e) { console.warn(e); }
-    return true;
+    dirty = false; setSaveState('ok'); return true;
   } catch (e) {
     setSaveState('error'); toast('Stockage local saturé : exportez la sauvegarde complète (.json) depuis Rapports.'); return false;
   }
@@ -2409,7 +2395,7 @@ function setPrepTab(tab) {
   if (tab !== 'cal') cancelCalMode();
   qsa('#prepTabs [data-ptab]').forEach(b => b.classList.toggle('on', b.dataset.ptab === tab));
   qsa('#screen-prep .ptab').forEach(p => p.classList.toggle('on', p.id === 'prep-' + tab));
-  ({ projet: renderPrepProject, docs: renderPrepDocs, cal: renderCal, nom: renderNom, stock: renderStock, share: () => { try { renderShare(); } catch (e) { /* module de partage pas encore prêt au démarrage : rendu refait après initSync */ } } })[tab]?.();
+  ({ projet: renderPrepProject, docs: renderPrepDocs, cal: renderCal, nom: renderNom, stock: renderStock })[tab]?.();
 }
 function renderPrepProject() {
   qsa('[data-bind]', $('prep-projet')).forEach(inp => { if (inp !== document.activeElement) inp.value = getBound(inp.dataset.bind) ?? ''; });
@@ -3562,436 +3548,12 @@ async function boot() {
   setScreen(ui.screen || 'diag');
   await probeBlobURL();
   try { await loadDocs(); } catch (e) { console.warn(e); }
-  try { initSync(); } catch (e) { console.warn(e); }
   renderAll();
   if (from && from !== LS_KEY) { save(true); toast('Dossier de la version précédente repris : pastilles, photos et plans conservés.'); }
 }
 boot().catch(e => { console.error(e); toast('Erreur au démarrage : ' + e.message); });
 /* Accès de diagnostic (console du navigateur) */
-window.FacadeStudio = { save: (n) => save(n), version: APP_VERSION, get state() { return st; }, get selected() { return selectedId; }, sevOf, obsById, exportJSON, calOf, bandOf };
-
-/* ============================================================
-   Partage : synchronisation d'un projet avec Google Drive
-   - un dossier Drive par projet : projet.json + photos/ + plans/
-   - fusion observation par observation (date de dernière modification)
-   - fonctionne hors ligne : les changements partent au retour du réseau
-   ============================================================ */
-const SYNC_KEY = 'facade_studio_v12_sync';
-const GSI_SRC = 'https://accounts.google.com/gsi/client';
-const G_DRIVE = 'https://www.googleapis.com/drive/v3', G_UP = 'https://www.googleapis.com/upload/drive/v3';
-const G_SCOPE = 'https://www.googleapis.com/auth/drive';
-const GOOGLE_CLIENT_ID_DEFAULT = '122282134099-2v6fdrc1kjcp0baj0c6s6pd48v09gj5l.apps.googleusercontent.com';
-const SYNC_MIME_DIR = 'application/vnd.google-apps.folder';
-
-function newSyncMeta() { return { obsHash: {}, obsUpd: {}, deleted: {}, metaHash: '', metaUpd: '', remoteTime: '' }; }
-function loadSyncCfg() {
-  let c = {}; try { c = JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch (e) { c = {}; }
-  return Object.assign({ clientId: '', folderId: '', folderName: '', photosId: '', plansId: '', email: '', lastSync: '', meta: null }, c);
-}
-let sy = loadSyncCfg();
-function saveSyncCfg() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(sy)); } catch (e) { /* sans gravité */ } }
-const syncClientId = () => sy.clientId || GOOGLE_CLIENT_ID_DEFAULT;
-const isLinked = () => !!sy.folderId;
-
-/* ---------- état affiché ---------- */
-let syncStatus = 'off', syncMsg = '';
-function setSyncState(s, msg) {
-  syncStatus = s; syncMsg = msg || '';
-  const el = $('syncState');
-  if (el) {
-    el.hidden = !isLinked();
-    el.className = 'savestate syncstate ' + s;
-    const t = { ok: 'Partagé', syncing: 'Synchronisation…', offline: 'Hors ligne', auth: 'Reconnexion', error: 'Erreur de partage', off: '' }[s] || '';
-    el.innerHTML = `<span class="ic">☁</span><span class="t">${esc(t)}</span>`;
-    el.title = s === 'error' ? 'Erreur de synchronisation : ' + syncMsg : s === 'auth' ? 'Touchez pour vous reconnecter à Google' : 'Projet partagé avec Google Drive';
-  }
-  if (ui && ui.screen === 'prep' && ui.prepTab === 'share') renderShare();
-}
-
-/* ---------- authentification Google (jeton en mémoire) ---------- */
-let gTok = null, gTokExp = 0, gInteractive = false, gsiPromise = null;
-function loadGsi() {
-  if (window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
-  if (gsiPromise) return gsiPromise;
-  gsiPromise = new Promise((res, rej) => {
-    const s = document.createElement('script'); s.src = GSI_SRC; s.async = true;
-    s.onload = () => res(); s.onerror = () => { gsiPromise = null; rej(new Error('Connexion à Google impossible (réseau)')); };
-    document.head.appendChild(s);
-  });
-  return gsiPromise;
-}
-async function gAuth(interactive) {
-  if (gTok && Date.now() < gTokExp - 60000) return gTok;
-  const id = syncClientId(); if (!id) throw new Error('Identifiant client Google manquant (Préparation › Partage).');
-  await loadGsi();
-  return new Promise((res, rej) => {
-    const c = google.accounts.oauth2.initTokenClient({
-      client_id: id, scope: G_SCOPE, hint: sy.email || undefined,
-      callback: r => { if (r && r.access_token) { gTok = r.access_token; gTokExp = Date.now() + (r.expires_in || 3600) * 1000; res(gTok); } else rej(new Error(interactive ? 'Connexion refusée' : 'NEED_AUTH')); },
-      error_callback: () => rej(new Error(interactive ? 'Fenêtre Google fermée ou bloquée' : 'NEED_AUTH'))
-    });
-    c.requestAccessToken({ prompt: interactive ? '' : 'none' });
-  });
-}
-async function gfetch(url, opt = {}) {
-  const tok = await gAuth(gInteractive);
-  const r = await fetch(url, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + tok }, opt.headers || {}) }));
-  if (r.status === 401 && !opt._retry) { gTok = null; return gfetch(url, Object.assign({}, opt, { _retry: 1 })); }
-  if (!r.ok) {
-    let m = ''; try { m = (await r.json()).error.message; } catch (e) { /* corps non JSON */ }
-    const e = new Error(m || 'Google Drive : erreur ' + r.status); e.status = r.status; throw e;
-  }
-  return r;
-}
-const gJson = async (u, o) => (await gfetch(u, o)).json();
-const qs1 = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-/* ---------- Drive ---------- */
-async function dList(q, fields = 'files(id,name,mimeType,modifiedTime,appProperties,size)') {
-  let out = [], tok = '';
-  do {
-    const u = `${G_DRIVE}/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent('nextPageToken,' + fields)}&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true` + (tok ? '&pageToken=' + encodeURIComponent(tok) : '');
-    const j = await gJson(u); out = out.concat(j.files || []); tok = j.nextPageToken || '';
-  } while (tok);
-  return out;
-}
-async function dMkdir(name, parent) {
-  const body = { name, mimeType: SYNC_MIME_DIR }; if (parent) body.parents = [parent];
-  return gJson(`${G_DRIVE}/files?fields=id,name&supportsAllDrives=true`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-}
-async function dPut(parent, name, blob, mime, props, id) {
-  const meta = { name }; if (!id) meta.parents = [parent]; if (props) meta.appProperties = props;
-  const bd = 'mdb' + Math.random().toString(36).slice(2);
-  const body = new Blob([`--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: ${mime}\r\n\r\n`, blob, `\r\n--${bd}--`]);
-  const u = id ? `${G_UP}/files/${id}?uploadType=multipart&fields=id,modifiedTime&supportsAllDrives=true` : `${G_UP}/files?uploadType=multipart&fields=id,modifiedTime&supportsAllDrives=true`;
-  return gJson(u, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body });
-}
-const dGet = async id => (await gfetch(`${G_DRIVE}/files/${id}?alt=media&supportsAllDrives=true`)).blob();
-async function dEmail() {
-  const j = await gJson(`${G_DRIVE}/about?fields=${encodeURIComponent('user(emailAddress,displayName)')}`);
-  return (j.user && j.user.emailAddress) || '';
-}
-async function ensureSub() {
-  if (sy.photosId && sy.plansId) return;
-  const kids = await dList(`'${qs1(sy.folderId)}' in parents and trashed=false and mimeType='${SYNC_MIME_DIR}'`, 'files(id,name)');
-  for (const k of kids) { if (k.name === 'photos' && !sy.photosId) sy.photosId = k.id; if (k.name === 'plans' && !sy.plansId) sy.plansId = k.id; }
-  if (!sy.photosId) sy.photosId = (await dMkdir('photos', sy.folderId)).id;
-  if (!sy.plansId) sy.plansId = (await dMkdir('plans', sy.folderId)).id;
-  saveSyncCfg();
-}
-
-/* ---------- suivi des modifications locales ---------- */
-function hashOf(v) { const s = typeof v === 'string' ? v : JSON.stringify(v); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + s.length.toString(36); }
-function metaOf(s) {
-  const set = Object.assign({}, s.settings); delete set.pinSize; delete set.photoMax; delete set.photoQuality;
-  return { project: s.project, info: s.info, settings: set, levels: s.levels, facades: s.facades, calibrations: s.calibrations, calShared: s.calShared, bands: s.bands, bandsShared: s.bandsShared, customDisorders: s.customDisorders, catalogEdits: s.catalogEdits };
-}
-function trackChanges() {
-  if (!isLinked()) return false;
-  const m = sy.meta || (sy.meta = newSyncMeta()), now = new Date().toISOString(); let ch = false;
-  const seen = new Set();
-  for (const o of st.observations) {
-    seen.add(o.id); const h = hashOf(o);
-    if (m.obsHash[o.id] !== h) { m.obsHash[o.id] = h; m.obsUpd[o.id] = now; delete m.deleted[o.id]; ch = true; }
-  }
-  for (const id of Object.keys(m.obsHash)) if (!seen.has(id)) { delete m.obsHash[id]; delete m.obsUpd[id]; m.deleted[id] = now; ch = true; }
-  const mh = hashOf(metaOf(st)); if (m.metaHash !== mh) { m.metaHash = mh; m.metaUpd = now; ch = true; }
-  if (ch) { saveSyncCfg(); scheduleSync(); }
-  return ch;
-}
-function rehashAll() {
-  const m = sy.meta; for (const o of st.observations) m.obsHash[o.id] = hashOf(o);
-  m.metaHash = hashOf(metaOf(st));
-}
-
-/* ---------- fusion ---------- */
-function buildRemoteDoc() {
-  const m = sy.meta, now = new Date().toISOString(), obs = {}, del = {}, lim = Date.now() - 90 * 864e5;
-  for (const o of st.observations) obs[o.id] = { upd: m.obsUpd[o.id] || now, data: o };
-  for (const [id, ts] of Object.entries(m.deleted)) { if (obs[id] && obs[id].upd > ts) continue; if (Date.parse(ts) > lim) del[id] = ts; }
-  return { format: 'mon-diagnostic-sync-1', savedAt: now, by: sy.email || '', metaUpd: m.metaUpd || '', meta: metaOf(st), obs, deleted: del };
-}
-const docSig = d => JSON.stringify([d.metaUpd || '', Object.entries(d.obs || {}).map(([k, v]) => k + '@' + v.upd).sort(), Object.entries(d.deleted || {}).map(([k, v]) => k + '@' + v).sort()]);
-function applyState(list, rmeta) {
-  const keepDocs = st.docs, keepBrand = st.brand, keepSet = st.settings;
-  const base = Object.assign(metaOf(st), rmeta || {});
-  if (rmeta && rmeta.settings) base.settings = Object.assign({}, keepSet, rmeta.settings);
-  const ns = normalizeState(Object.assign({}, base, { observations: list }));
-  ns.docs = keepDocs; ns.brand = keepBrand; st = ns;
-  if (typeof selectedId !== 'undefined' && selectedId && !st.observations.some(o => o.id === selectedId)) selectedId = null;
-}
-/* applique le fichier distant au dossier local ; renvoie true si le dossier local a changé */
-function mergeRemote(remote) {
-  const m = sy.meta; let changed = false, rmeta = null;
-  let list = st.observations.slice();
-  const rObs = remote.obs || {}, rDel = remote.deleted || {}, touched = new Map();
-  for (const [id, ts] of Object.entries(rDel)) {
-    const has = list.some(x => x.id === id);
-    if (has) { if ((m.obsUpd[id] || '') < ts) { list = list.filter(x => x.id !== id); delete m.obsHash[id]; delete m.obsUpd[id]; m.deleted[id] = ts; changed = true; } }
-    else if ((m.deleted[id] || '') < ts) m.deleted[id] = ts;
-  }
-  for (const [id, r] of Object.entries(rObs)) {
-    const i = list.findIndex(x => x.id === id);
-    if (i < 0) {
-      if ((m.deleted[id] || '') >= r.upd) continue;
-      list.push(r.data); touched.set(id, r.upd); delete m.deleted[id]; changed = true;
-    } else if (r.upd > (m.obsUpd[id] || '')) { list[i] = r.data; touched.set(id, r.upd); changed = true; }
-  }
-  if ((remote.metaUpd || '') > (m.metaUpd || '') && remote.meta) { rmeta = remote.meta; changed = true; }
-  if (changed) {
-    applyState(list, rmeta);
-    for (const [id, upd] of touched) m.obsUpd[id] = upd;
-    if (rmeta) m.metaUpd = remote.metaUpd;
-    rehashAll();
-    save(true);
-  }
-  return changed;
-}
-async function syncData() {
-  const m = sy.meta || (sy.meta = newSyncMeta()); let changedLocal = false;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const q = `'${qs1(sy.folderId)}' in parents and trashed=false and name='projet.json'`;
-    const f = (await dList(q, 'files(id,modifiedTime)'))[0];
-    let remote = null;
-    if (f) { try { remote = JSON.parse(await (await dGet(f.id)).text()); } catch (e) { remote = null; } }
-    if (remote && remote.obs) { if (mergeRemote(remote)) changedLocal = true; }
-    const doc = buildRemoteDoc();
-    if (!f || !remote || docSig(doc) !== docSig(remote)) {
-      if (f) { const cur = (await dList(q, 'files(id,modifiedTime)'))[0]; if (cur && cur.modifiedTime !== f.modifiedTime) continue; }
-      const r = await dPut(sy.folderId, 'projet.json', new Blob([JSON.stringify(doc)], { type: 'application/json' }), 'application/json', null, f && f.id);
-      m.remoteTime = r.modifiedTime || '';
-    } else m.remoteTime = f.modifiedTime || m.remoteTime;
-    saveSyncCfg(); break;
-  }
-  return changedLocal;
-}
-
-/* ---------- photos et plans ---------- */
-async function makeThumb(blob) {
-  const src = await decodeImage(blob); const W = src.width || src.naturalWidth, H = src.height || src.naturalHeight;
-  const k = Math.min(1, 360 / Math.max(W, H)); const tc = document.createElement('canvas');
-  tc.width = Math.max(1, Math.round(W * k)); tc.height = Math.max(1, Math.round(H * k));
-  tc.getContext('2d').drawImage(src, 0, 0, tc.width, tc.height);
-  const thumb = await canvasBlob(tc, 'image/jpeg', 0.72); if (src.close) src.close();
-  return { thumb, w: W, h: H };
-}
-async function syncPhotos() {
-  const files = await dList(`'${qs1(sy.photosId)}' in parents and trashed=false`);
-  const remote = new Map(files.map(f => [f.name.replace(/\.jpg$/, ''), f]));
-  const need = new Set(); for (const o of st.observations) for (const d of o.disorders || []) for (const p of d.photoIds || []) need.add(p);
-  const local = new Set(await idbKeys('photos')); let got = 0;
-  for (const pid of need) {
-    if (local.has(pid) && !remote.has(pid)) {
-      const row = await photoRow(pid), blob = await photoBlob(row, 'full');
-      if (blob) await dPut(sy.photosId, pid + '.jpg', blob, 'image/jpeg', { obsId: row.obsId || '', disorderId: row.disorderId || '', name: row.name || '', createdAt: row.createdAt || '' });
-    } else if (!local.has(pid) && remote.has(pid)) {
-      const f = remote.get(pid), ap = f.appProperties || {}, blob = await dGet(f.id);
-      let t = { thumb: null, w: 0, h: 0 }; try { t = await makeThumb(blob); } catch (e) { /* vignette facultative */ }
-      await idbPut('photos', { id: pid, obsId: ap.obsId || '', disorderId: ap.disorderId || '', name: ap.name || 'Photo de chantier', createdAt: ap.createdAt || new Date().toISOString(), blob, thumb: t.thumb || undefined, w: t.w, h: t.h });
-      forgetPhotoURL(pid); got++;
-    }
-  }
-  return got;
-}
-async function syncPlans() {
-  const files = await dList(`'${qs1(sy.plansId)}' in parents and trashed=false`);
-  const remote = new Map(files.map(f => [f.name, f]));
-  const rows = (await idbAll('documents')).filter(r => (r.which === 'plan' || r.which === 'elev') && r.key);
-  const localByName = new Map(rows.map(r => [r.which + '__' + r.key + '.png', r])); let got = 0;
-  for (const [name, row] of localByName) {
-    const f = remote.get(name), lu = row.updatedAt || '';
-    if (f && (f.appProperties.upd || '') >= lu) continue;
-    let blob = row.blob || null; if (!blob && row.rendered) blob = await dataURLToBlob(row.rendered); if (!blob) continue;
-    await dPut(sy.plansId, name, blob, 'image/png', { which: row.which, key: row.key, name: row.name || '', page: String(row.page || 1), w: String(row.w || ''), h: String(row.h || ''), source: row.source || '', upd: lu || new Date().toISOString() }, f && f.id);
-  }
-  for (const [name, f] of remote) {
-    const ap = f.appProperties || {}, row = localByName.get(name);
-    if (!ap.which || !ap.key) continue;
-    if (row && (row.updatedAt || '') >= (ap.upd || '')) continue;
-    const blob = await dGet(f.id);
-    const nr = { id: ap.which + ':' + ap.key, which: ap.which, key: ap.key, name: ap.name, page: +ap.page || 1, w: +ap.w || 0, h: +ap.h || 0, source: ap.source || ap.name, blob, updatedAt: ap.upd || new Date().toISOString() };
-    await idbPut('documents', nr); await mountDoc(nr); got++;
-  }
-  return got;
-}
-
-/* ---------- cycle de synchronisation ---------- */
-let syncBusy = false, syncAgain = false, syncTimer = null, pollTimer = null;
-function scheduleSync(ms = 4000) { if (!isLinked()) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), ms); }
-function refreshAfterRemote(photos) {
-  const a = document.activeElement, typing = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.closest('#prep-share');
-  if (typing) { dataChanged(); return; }
-  renderAll(); if (photos) hydratePhotos(document);
-}
-async function syncNow(interactive) {
-  if (!isLinked()) return;
-  if (syncBusy) { syncAgain = true; return; }
-  if (!navigator.onLine) { setSyncState('offline'); return; }
-  syncBusy = true; gInteractive = !!interactive; setSyncState('syncing');
-  try {
-    trackChanges();
-    await ensureSub();
-    const c1 = await syncData();
-    const ph = await syncPhotos(), pl = await syncPlans();
-    if (c1 || ph || pl) refreshAfterRemote(ph);
-    sy.lastSync = new Date().toISOString(); saveSyncCfg(); setSyncState('ok');
-  } catch (e) {
-    if (e.message === 'NEED_AUTH') setSyncState('auth');
-    else if (!navigator.onLine || /Failed to fetch|NetworkError|réseau/i.test(e.message)) setSyncState('offline');
-    else { console.warn('Synchronisation', e); setSyncState('error', e.message); }
-  } finally {
-    syncBusy = false; gInteractive = false;
-    if (syncAgain) { syncAgain = false; scheduleSync(1500); }
-  }
-}
-async function pollRemote() {
-  if (!isLinked() || syncBusy || document.visibilityState !== 'visible' || !navigator.onLine) return;
-  if (!gTok || Date.now() > gTokExp - 60000) { if (syncStatus !== 'auth') { gInteractive = false; try { await gAuth(false); } catch (e) { setSyncState('auth'); return; } } }
-  try {
-    gInteractive = false;
-    const f = (await dList(`'${qs1(sy.folderId)}' in parents and trashed=false and name='projet.json'`, 'files(id,modifiedTime)'))[0];
-    if (f && f.modifiedTime !== (sy.meta && sy.meta.remoteTime)) syncNow(false);
-  } catch (e) { /* le prochain tour réessaiera */ }
-}
-function startSyncLoop() {
-  clearInterval(pollTimer); pollTimer = setInterval(pollRemote, 25000);
-  window.addEventListener('online', () => scheduleSync(800));
-  window.addEventListener('offline', () => setSyncState('offline'));
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') scheduleSync(600); });
-}
-function initSync() {
-  const el = $('syncState');
-  if (el) el.onclick = () => { if (syncStatus === 'auth') syncNow(true); setScreen('prep'); setPrepTab('share'); };
-  if (!isLinked()) { setSyncState('off'); return; }
-  if (!sy.meta) sy.meta = newSyncMeta();
-  setSyncState(navigator.onLine ? 'auth' : 'offline');
-  trackChanges(); startSyncLoop();
-  if (gTok) scheduleSync(800); else { gInteractive = false; gAuth(false).then(() => scheduleSync(300)).catch(() => setSyncState('auth')); }
-}
-
-/* ---------- actions : lier, rejoindre, inviter ---------- */
-async function syncConnect() {
-  gInteractive = true;
-  try { await gAuth(true); try { sy.email = await dEmail(); } catch (e) { /* facultatif */ } saveSyncCfg(); toast('Connecté à Google' + (sy.email ? ' (' + sy.email + ')' : '')); }
-  catch (e) { toast(e.message); }
-  finally { gInteractive = false; }
-  renderShare();
-}
-async function syncCreateProject() {
-  gInteractive = true;
-  try {
-    await gAuth(true); if (!sy.email) { try { sy.email = await dEmail(); } catch (e) { /* facultatif */ } }
-    const name = ('MonDiagnostic - ' + (st.project || 'Diagnostic')).replace(/[\\/:*?"<>|]/g, ' ').slice(0, 100);
-    const same = await dList(`mimeType='${SYNC_MIME_DIR}' and trashed=false and name='${qs1(name)}'`, 'files(id)');
-    if (same.length && !confirm('Un projet « ' + name + ' » existe déjà sur Drive. Pour le retrouver sans en créer un second, annulez, puis utilisez « Chercher mes projets et ceux partagés ». Créer quand même un nouveau dossier ?')) { gInteractive = false; renderShare(); return; }
-    const dir = await dMkdir(name);
-    Object.assign(sy, { folderId: dir.id, folderName: name, photosId: '', plansId: '', meta: newSyncMeta(), lastSync: '' });
-    saveSyncCfg(); trackChanges(); startSyncLoop();
-    toast('Projet créé sur votre Drive. Envoi en cours…');
-  } catch (e) { toast(e.message); gInteractive = false; renderShare(); return; }
-  await syncNow(true);
-  renderShare();
-}
-async function syncListShared() {
-  gInteractive = true;
-  try {
-    await gAuth(true);
-    const list = await dList(`mimeType='${SYNC_MIME_DIR}' and trashed=false and name contains 'MonDiagnostic'`, 'files(id,name,modifiedTime,owners(displayName,emailAddress))');
-    if (!sy.email) { try { sy.email = await dEmail(); saveSyncCfg(); } catch (e) { /* facultatif */ } }
-    for (const f of list) f.mine = !!(f.owners && f.owners[0] && sy.email && String(f.owners[0].emailAddress).toLowerCase() === String(sy.email).toLowerCase());
-    return list.sort((a, b) => (b.modifiedTime || '').localeCompare(a.modifiedTime || ''));
-  } catch (e) { toast(e.message); return null; } finally { gInteractive = false; }
-}
-async function syncJoin(folder) {
-  if (!confirm(`Ouvrir « ${folder.name} » ? Le diagnostic en cours dans ce navigateur sera remplacé par celui du dossier Drive (les photos et plans seront retéléchargés).`)) return;
-  gInteractive = true; toast('Récupération du projet partagé…');
-  try {
-    await gAuth(true);
-    const f = (await dList(`'${qs1(folder.id)}' in parents and trashed=false and name='projet.json'`, 'files(id,modifiedTime)'))[0];
-    if (!f) throw new Error('Ce dossier ne contient pas encore de projet (projet.json).');
-    const remote = JSON.parse(await (await dGet(f.id)).text());
-    await tx('photos', 'readwrite', s => { s.clear(); });
-    for (const r of await idbAll('documents')) if (r.which === 'plan' || r.which === 'elev') await idbDel('documents', r.id);
-    for (const w of ['plan', 'elev']) for (const d of Object.values(st.docs[w])) revokeURL(d.url);
-    for (const id of [...photoURLs.keys()]) forgetPhotoURL(id);
-    const keepBrand = st.brand, keepSet = st.settings;
-    const list = Object.values(remote.obs || {}).map(x => x.data);
-    st = normalizeState(Object.assign({}, remote.meta || {}, { observations: list }));
-    st.brand = keepBrand; st.settings = Object.assign({}, st.settings, { pinSize: keepSet.pinSize, photoMax: keepSet.photoMax, photoQuality: keepSet.photoQuality });
-    Object.assign(sy, { folderId: folder.id, folderName: folder.name, photosId: '', plansId: '', meta: newSyncMeta(), lastSync: '' });
-    sy.meta.deleted = Object.assign({}, remote.deleted || {}); sy.meta.metaUpd = remote.metaUpd || '';
-    const byId = remote.obs || {}; for (const o of st.observations) sy.meta.obsUpd[o.id] = (byId[o.id] && byId[o.id].upd) || new Date().toISOString();
-    rehashAll(); saveSyncCfg();
-    if (typeof selectedId !== 'undefined') selectedId = null; ui.level = null; ui.face = null; saveUI();
-    save(true); startSyncLoop(); renderAll();
-  } catch (e) { toast('Impossible de rejoindre : ' + e.message); gInteractive = false; renderShare(); return; }
-  await syncNow(true); renderShare(); toast('Projet partagé récupéré.');
-}
-async function syncInvite(email) {
-  email = String(email || '').trim(); if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Saisissez une adresse e-mail Google valide.'); return; }
-  gInteractive = true;
-  try {
-    await gAuth(true);
-    await gJson(`${G_DRIVE}/files/${sy.folderId}/permissions?sendNotificationEmail=true&supportsAllDrives=true`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'writer', type: 'user', emailAddress: email }) });
-    toast(email + ' peut maintenant modifier ce projet.');
-  } catch (e) { toast('Invitation impossible : ' + e.message); } finally { gInteractive = false; }
-}
-function syncUnlink() {
-  if (!confirm('Arrêter le partage pour ce navigateur ? Vos données locales sont conservées ; le dossier Drive n’est pas supprimé.')) return;
-  clearInterval(pollTimer); clearTimeout(syncTimer);
-  Object.assign(sy, { folderId: '', folderName: '', photosId: '', plansId: '', meta: null, lastSync: '' }); saveSyncCfg();
-  setSyncState('off'); renderShare();
-}
-
-/* ---------- interface (Préparation › Partage) ---------- */
-let sharedList = null;
-function renderShare() {
-  const box = $('shareBody'); if (!box) return;
-  const cid = syncClientId(), connected = !!(gTok && Date.now() < gTokExp - 60000);
-  const st1 = { ok: 'Synchronisé', syncing: 'Synchronisation en cours…', offline: 'Hors ligne : les changements partiront au retour du réseau.', auth: 'Reconnexion à Google nécessaire.', error: 'Erreur : ' + esc(syncMsg), off: '' }[syncStatus] || '';
-  let h = '';
-  if (isLinked()) {
-    h += `<div class="card"><h2>Projet partagé sur Google Drive</h2>
-      <p class="small"><b>${esc(sy.folderName)}</b>${sy.email ? ' · connecté en tant que ' + esc(sy.email) : ''}</p>
-      <p class="small">État : <b>${st1 || '—'}</b>${sy.lastSync ? ' · dernière synchronisation ' + esc(new Date(sy.lastSync).toLocaleString('fr-FR')) : ''}</p>
-      <div class="row"><button type="button" class="btn pri" data-sh="sync">↻ Synchroniser maintenant</button>
-      <a class="btn" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${encodeURIComponent(sy.folderId)}">Ouvrir le dossier Drive</a><span class="sp"></span><button type="button" class="btn warn" data-sh="unlink">Arrêter le partage</button></div>
-      <p class="tiny">Les modifications partent automatiquement quelques secondes après chaque saisie, et celles des collègues arrivent toutes les 25 secondes. Hors ligne, tout est conservé et envoyé au retour du réseau.</p></div>
-      <div class="card"><h2>Inviter un collègue</h2>
-      <div class="row"><input type="email" id="shInvite" placeholder="adresse.google@exemple.com" aria-label="E-mail du collègue" style="flex:1;min-width:200px"><button type="button" class="btn" data-sh="invite">Inviter (modification)</button></div>
-      <p class="tiny">Le collègue doit avoir un compte Google et figurer parmi les utilisateurs test du projet Google Cloud. Il recevra un e-mail, puis, dans Mon Diagnostic › Préparation › Partage, choisira « Rejoindre un projet partagé ».</p></div>`;
-  } else {
-    h += `<div class="card"><h2>1 · Connexion à Google</h2>`;
-    if (!cid) h += `<p class="small">Collez ici l'identifiant client Google (créé dans Google Cloud, voir le guide). Il ne contient aucun secret.</p>
-      <div class="row"><input id="shClient" placeholder="123456789-abc….apps.googleusercontent.com" style="flex:1;min-width:240px" aria-label="Identifiant client Google"><button type="button" class="btn pri" data-sh="saveid">Enregistrer</button></div>`;
-    else h += `<p class="small">${connected ? '✔ Connecté' + (sy.email ? ' en tant que <b>' + esc(sy.email) + '</b>' : '') : 'Non connecté.'}</p>
-      <div class="row"><button type="button" class="btn pri" data-sh="connect">${connected ? 'Se reconnecter' : 'Se connecter à Google'}</button>${sy.clientId ? '<button type="button" class="btn" data-sh="clearid">Changer l’identifiant client</button>' : ''}</div>`;
-    h += `</div>`;
-    if (cid) {
-      h += `<div class="card"><h2>2 · Partager ce diagnostic</h2><p class="small">Crée un dossier « MonDiagnostic - ${esc(st.project || '')} » dans votre Drive et y envoie le diagnostic, les plans et les photos.</p>
-        <div class="row"><button type="button" class="btn pri" data-sh="create">☁ Créer le projet partagé</button></div></div>
-        <div class="card"><h2>… ou retrouver un projet existant sur Drive</h2>
-        <div class="row"><button type="button" class="btn" data-sh="list">Chercher mes projets et ceux partagés</button></div>`;
-      if (sharedList) h += sharedList.length ? `<ul class="shlist">${sharedList.map((f, i) => `<li><span><b>${esc(f.name)}</b><br><span class="tiny">${f.mine ? 'créé par vous' : esc((f.owners && f.owners[0] && (f.owners[0].displayName || f.owners[0].emailAddress)) || '')}${f.modifiedTime ? ' · ' + esc(new Date(f.modifiedTime).toLocaleDateString('fr-FR')) : ''}</span></span><button type="button" class="btn sm pri" data-sh="join" data-i="${i}">${f.mine ? 'Rouvrir' : 'Rejoindre'}</button></li>`).join('')}</ul>` : `<p class="tiny">Aucun projet trouvé. Un projet partagé n'apparaît qu'après l'invitation du propriétaire.</p>`;
-      h += `</div>`;
-    }
-  }
-  box.innerHTML = h;
-  box.onclick = async e => {
-    const b = e.target.closest('[data-sh]'); if (!b) return; const a = b.dataset.sh;
-    if (a === 'saveid') { const v = ($('shClient').value || '').trim(); if (!/\.apps\.googleusercontent\.com$/.test(v)) { toast('Identifiant invalide : il doit se terminer par .apps.googleusercontent.com'); return; } sy.clientId = v; saveSyncCfg(); renderShare(); }
-    else if (a === 'clearid') { sy.clientId = ''; gTok = null; saveSyncCfg(); renderShare(); }
-    else if (a === 'connect') await syncConnect();
-    else if (a === 'create') await syncCreateProject();
-    else if (a === 'list') { sharedList = await syncListShared(); renderShare(); }
-    else if (a === 'join' && sharedList) await syncJoin(sharedList[+b.dataset.i]);
-    else if (a === 'sync') await syncNow(true);
-    else if (a === 'invite') await syncInvite($('shInvite').value);
-    else if (a === 'unlink') syncUnlink();
-  };
-}
-
-window.FacadeSync = { syncNow, trackChanges, cfg: () => sy, status: () => syncStatus, createProject: syncCreateProject, join: syncJoin, listShared: syncListShared, connect: syncConnect };
+window.FacadeStudio = { version: APP_VERSION, get state() { return st; }, get selected() { return selectedId; }, sevOf, obsById, exportJSON, calOf, bandOf };
 
 </script>
 </body>
