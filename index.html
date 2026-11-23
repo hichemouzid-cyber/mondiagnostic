@@ -3599,11 +3599,11 @@ function setSyncState(s, msg) {
   syncStatus = s; syncMsg = msg || '';
   const el = $('syncState');
   if (el) {
-    el.hidden = !isLinked();
+    el.hidden = false;
     el.className = 'savestate syncstate ' + s;
-    const t = { ok: 'Partagé', syncing: 'Synchronisation…', offline: 'Hors ligne', auth: 'Reconnexion', error: 'Erreur de partage', off: '' }[s] || '';
+    const t = { ok: 'Partagé', syncing: 'Synchronisation…', offline: 'Hors ligne', auth: 'Reconnexion', error: 'Erreur de partage', off: 'Drive' }[s] || '';
     el.innerHTML = `<span class="ic">☁</span><span class="t">${esc(t)}</span>`;
-    el.title = s === 'error' ? 'Erreur de synchronisation : ' + syncMsg : s === 'auth' ? 'Touchez pour vous reconnecter à Google' : 'Projet partagé avec Google Drive';
+    el.title = s === 'off' ? 'Ouvrir ou partager un projet Google Drive' : s === 'error' ? 'Erreur de synchronisation : ' + syncMsg : s === 'auth' ? 'Touchez pour vous reconnecter à Google' : 'Projet partagé avec Google Drive';
   }
   if (ui && ui.screen === 'prep' && ui.prepTab === 'share') renderShare();
 }
