@@ -3580,7 +3580,7 @@ const SYNC_KEY = 'facade_studio_v12_sync';
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
 const G_DRIVE = 'https://www.googleapis.com/drive/v3', G_UP = 'https://www.googleapis.com/upload/drive/v3';
 const G_SCOPE = 'https://www.googleapis.com/auth/drive';
-const GOOGLE_CLIENT_ID_DEFAULT = '';
+const GOOGLE_CLIENT_ID_DEFAULT = '122282134099-2v6fdrc1kjcp0baj0c6s6pd48v09gj5l.apps.googleusercontent.com';
 const SYNC_MIME_DIR = 'application/vnd.google-apps.folder';
 
 function newSyncMeta() { return { obsHash: {}, obsUpd: {}, deleted: {}, metaHash: '', metaUpd: '', remoteTime: '' }; }
@@ -3882,6 +3882,8 @@ async function syncCreateProject() {
   try {
     await gAuth(true); if (!sy.email) { try { sy.email = await dEmail(); } catch (e) { /* facultatif */ } }
     const name = ('MonDiagnostic - ' + (st.project || 'Diagnostic')).replace(/[\\/:*?"<>|]/g, ' ').slice(0, 100);
+    const same = await dList(`mimeType='${SYNC_MIME_DIR}' and trashed=false and name='${qs1(name)}'`, 'files(id)');
+    if (same.length && !confirm('Un projet « ' + name + ' » existe déjà sur Drive. Pour le retrouver sans en créer un second, annulez, puis utilisez « Chercher mes projets et ceux partagés ». Créer quand même un nouveau dossier ?')) { gInteractive = false; renderShare(); return; }
     const dir = await dMkdir(name);
     Object.assign(sy, { folderId: dir.id, folderName: name, photosId: '', plansId: '', meta: newSyncMeta(), lastSync: '' });
     saveSyncCfg(); trackChanges(); startSyncLoop();
@@ -3894,13 +3896,14 @@ async function syncListShared() {
   gInteractive = true;
   try {
     await gAuth(true);
-    const list = await dList(`sharedWithMe and mimeType='${SYNC_MIME_DIR}' and trashed=false and name contains 'MonDiagnostic'`, 'files(id,name,modifiedTime,owners(displayName,emailAddress))');
+    const list = await dList(`mimeType='${SYNC_MIME_DIR}' and trashed=false and name contains 'MonDiagnostic'`, 'files(id,name,modifiedTime,owners(displayName,emailAddress))');
     if (!sy.email) { try { sy.email = await dEmail(); saveSyncCfg(); } catch (e) { /* facultatif */ } }
-    return list;
+    for (const f of list) f.mine = !!(f.owners && f.owners[0] && sy.email && String(f.owners[0].emailAddress).toLowerCase() === String(sy.email).toLowerCase());
+    return list.sort((a, b) => (b.modifiedTime || '').localeCompare(a.modifiedTime || ''));
   } catch (e) { toast(e.message); return null; } finally { gInteractive = false; }
 }
 async function syncJoin(folder) {
-  if (!confirm(`Rejoindre « ${folder.name} » ? Le diagnostic en cours dans ce navigateur sera remplacé par celui du dossier partagé.`)) return;
+  if (!confirm(`Ouvrir « ${folder.name} » ? Le diagnostic en cours dans ce navigateur sera remplacé par celui du dossier Drive (les photos et plans seront retéléchargés).`)) return;
   gInteractive = true; toast('Récupération du projet partagé…');
   try {
     await gAuth(true);
@@ -3967,9 +3970,9 @@ function renderShare() {
     if (cid) {
       h += `<div class="card"><h2>2 · Partager ce diagnostic</h2><p class="small">Crée un dossier « MonDiagnostic - ${esc(st.project || '')} » dans votre Drive et y envoie le diagnostic, les plans et les photos.</p>
         <div class="row"><button type="button" class="btn pri" data-sh="create">☁ Créer le projet partagé</button></div></div>
-        <div class="card"><h2>… ou rejoindre un projet partagé</h2>
-        <div class="row"><button type="button" class="btn" data-sh="list">Chercher les projets partagés avec moi</button></div>`;
-      if (sharedList) h += sharedList.length ? `<ul class="shlist">${sharedList.map((f, i) => `<li><span><b>${esc(f.name)}</b><br><span class="tiny">${esc((f.owners && f.owners[0] && (f.owners[0].displayName || f.owners[0].emailAddress)) || '')}${f.modifiedTime ? ' · ' + esc(new Date(f.modifiedTime).toLocaleDateString('fr-FR')) : ''}</span></span><button type="button" class="btn sm pri" data-sh="join" data-i="${i}">Rejoindre</button></li>`).join('')}</ul>` : `<p class="tiny">Aucun projet partagé trouvé. Le propriétaire doit d'abord vous inviter.</p>`;
+        <div class="card"><h2>… ou retrouver un projet existant sur Drive</h2>
+        <div class="row"><button type="button" class="btn" data-sh="list">Chercher mes projets et ceux partagés</button></div>`;
+      if (sharedList) h += sharedList.length ? `<ul class="shlist">${sharedList.map((f, i) => `<li><span><b>${esc(f.name)}</b><br><span class="tiny">${f.mine ? 'créé par vous' : esc((f.owners && f.owners[0] && (f.owners[0].displayName || f.owners[0].emailAddress)) || '')}${f.modifiedTime ? ' · ' + esc(new Date(f.modifiedTime).toLocaleDateString('fr-FR')) : ''}</span></span><button type="button" class="btn sm pri" data-sh="join" data-i="${i}">${f.mine ? 'Rouvrir' : 'Rejoindre'}</button></li>`).join('')}</ul>` : `<p class="tiny">Aucun projet trouvé. Un projet partagé n'apparaît qu'après l'invitation du propriétaire.</p>`;
       h += `</div>`;
     }
   }
