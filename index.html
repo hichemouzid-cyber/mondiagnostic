@@ -2409,7 +2409,7 @@ function setPrepTab(tab) {
   if (tab !== 'cal') cancelCalMode();
   qsa('#prepTabs [data-ptab]').forEach(b => b.classList.toggle('on', b.dataset.ptab === tab));
   qsa('#screen-prep .ptab').forEach(p => p.classList.toggle('on', p.id === 'prep-' + tab));
-  ({ projet: renderPrepProject, docs: renderPrepDocs, cal: renderCal, nom: renderNom, stock: renderStock, share: renderShare })[tab]?.();
+  ({ projet: renderPrepProject, docs: renderPrepDocs, cal: renderCal, nom: renderNom, stock: renderStock, share: () => { try { renderShare(); } catch (e) { /* module de partage pas encore prêt au démarrage : rendu refait après initSync */ } } })[tab]?.();
 }
 function renderPrepProject() {
   qsa('[data-bind]', $('prep-projet')).forEach(inp => { if (inp !== document.activeElement) inp.value = getBound(inp.dataset.bind) ?? ''; });
